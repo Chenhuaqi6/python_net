@@ -1,0 +1,135 @@
+前情回顾
+
+1.tcp传输特征
+    传输中接收和发送的特征
+    网络缓冲区
+
+
+
+day03新内容
+
+IO (input  output)
+
+在内存中存在数据交互的操作认为是IO操作
+
+和终端交互: input output
+和磁盘交互: read write 
+和网络交互: recv send 
+
+IO密集型程序:在程序执行中有大量IO操作,而较少的cpu运算,消耗CPU少,效率低,耗时长
+
+
+计算密集型程序:在程序运行中,io操作较少,cpu计算较多,cpu消耗大,运行速度快
+
+
+io 模型
+
+阻塞io  非阻塞io io多路复用 事件io 异步io
+
+
+阻塞io
+    阻塞io是io的默认形态,是效率很低的一种io
+
+    阻塞情况:
+    *因为某种条件没有达成 造成的函数阻塞
+        e.g: accept  input recv 
+    *处理io的时间较长产生的阻塞行为
+    eg: 网络延迟,大文件的读写
+
+非阻塞io
+    将原本阻塞的函数通过属性的设置改变阻塞的行为,变为非阻塞
+
+    sockfd.setblocking(bool)
+    功能:设置套接字为非阻塞io
+    参数:默认true 表示套接字调用阻塞函数时为阻塞状态 设置为False 则表示阻塞状态
+
+超时检测,即设置一个最长阻塞等待时间,超时后即不再阻塞
+    sockfd.settimeout(sec)
+    功能:设置套接字超时时间
+    参数:设置的时间,秒
+    *超时检测不能和非阻塞通用,否则超时阻塞没有意义
+
+io多路复用:
+    定义:同时监控多个io事件,选择其中能够执行的io进行io事处理,以此形成可以同时操作多个io的行为模式,
+        避免一个io阻塞造成其他io均无法执行的情况.
+    
+    io事件就绪:io已经发生,内核需要交给应用程序处理
+
+    具体的实施方法:
+        import select (需要导入import模块)
+        
+        select:支持windows linux unix
+        poll: linux unix
+        epoll:linux 
+
+    select 方法
+        rs,ws,xs = select(rlist,wlist,xlist[,timeout])
+        功能:监控io事件,阻塞等待io事件发生
+        
+        参数:rlist 列表 监控读io事件  存放需要等待条件发生的io事件  用谁放它的对象在里面(如果是监听阻塞 就放监听的套接字,如果是recv send就放连接套接字))
+            wlist 列表 监控写io事件   存放需要主动处理的io事件
+            xlist 列表 监控出错io事件  当发生异常你需要处理的io事件 
+            timeout  超时时间 如果超过时间也结束阻塞操作
+            一个io可能会出现在多个中
+        
+        返回值:rs: 列表 rlist中准备就绪的io
+              ws: 列表 wlist中准备就绪的io
+              xs: 列表 xlist中准备就绪的io
+              至少有一个不为空列表
+        注意:1.io多路复用占用的计算机资源较少,效率较高
+            2.wlist 中如果有io则select 立即返回出理
+            3.在io处理过程中不要出现死循环,影响io 监控
+
+
+    位运算
+      & 按位与  :遇0为0
+      | 按位或  :全零为零 遇1为1
+      ^ 按位异或 ;相同为0,不同为1
+      << 左移   :向左移动 右侧补零
+      >> 右移   :向右移动 去掉低位
+
+      11    1011
+      14    1110
+      
+      11&14 1010   10
+      11|14 1111   15
+      11^14 0101   5
+
+      11<<2 101100 44  左移以为 多乘个2 11*2*2
+      11>>2 11  
+
+      poll 方法
+        p = select.poll()
+        功能:创建poll对象
+        返回值:poll对象
+
+        p.register(fd,event)
+        功能:注册要关注的io
+        参数:fd 要关注的io对象
+            event 要关注的事件
+                常用事件类型: POLLIN 读io rlist
+                            POLLOUT 写io wlist
+                            POLLERR 出错io xlist
+                            POLLHUP 断开连接事件
+                eg:关注多个事件
+                    p.register(sockfd,POLLIN | POLLERR)
+
+        p.unregister(fd)
+        功能:取消关注的io
+        参数:io对象或者文件描述符
+
+        events = p.poll()
+        功能: 阻塞监控io事件发生
+        返回值:events 是一个列表
+                [(fileno,event),()...]
+                每个就绪io对应一个元组,元组中为该io的fileno和就绪事件
+            * 返回值中没有io对象,所以通过fileno配合io对象字典查找
+                {fileno:io_obj}
+
+        poll_server 步骤
+        1.创建套接字
+        2.设置套接字为关注
+        3.建立fileno查找字典
+        4.循环监控io
+        5.处理发生的io
+        
