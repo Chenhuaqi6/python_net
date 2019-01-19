@@ -118,7 +118,7 @@ class HTTPServer(object):
         
 #提供服务器地址和静态文件路径
 server_addr = ("0.0.0.0",8000)
-static_dir = "/home/tarena/pythonNET/day09/http/static"
+static_dir = "/home/tarena/python_net/day09/http/static"
 
 
 #创建服务器对象

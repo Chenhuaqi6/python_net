@@ -181,7 +181,7 @@ socket 模块
             服务端:
             socket()---bind()----listen()---accept()---recv()/send()--close()
             客户端:
-            socket()---connect()---sen()---close()    
+            socket()---connect()---send()---close()    
                 特征:面向连接的传输服务,能够保证传输可靠性,是基于tcp请求的一种套接字,数据传输使用字节流传输
 
             数据报套接字:(SOCK_DGRAM)
